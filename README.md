@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/kotl1n/nullfuscator"><img src="https://img.shields.io/badge/version-0.2.1--beta-blue.svg" alt="Version"></a>
+  <a href="https://github.com/kotl1n/nullfuscator"><img src="https://img.shields.io/badge/version-0.2.2--beta-blue.svg" alt="Version"></a>
   <a href="https://github.com/kotl1n/nullfuscator"><img src="https://img.shields.io/badge/java-17%2B-orange.svg" alt="Java 17+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License"></a>
   <a href="https://github.com/kotl1n/nullfuscator"><img src="https://img.shields.io/badge/build-offline%20%2F%20reproducible-brightgreen.svg" alt="Build Status"></a>
@@ -98,6 +98,9 @@ NULLFUSCATOR applies up to 27 modular transformation passes organized into focus
 | | `crossClassDispersion`| Relocates internal business logic into synthetic helper classes across the archive. |
 | | `methodRelocation` | Atomically migrates method implementations across carrier classes. |
 | **Renaming** | `classRenamer` | Renames classes to unreadable Unicode or short dictionary identifiers. |
+| | `resourceRenamer` | Renames mod-owned asset paths and rewrites literal lookups in classes and text resources. |
+| **Release cleanup** | `releaseHardening` | Removes Maven/ProGuard metadata and clears Fabric mod descriptions. |
+| | `annotationSanitizer` | Removes explicitly selected runtime annotations; use only when their metadata is non-essential. |
 | | `methodRenamer` | Renames private, package-private, static, and public/virtual methods. |
 | | `fieldRenamer` | Renames member fields to minimal collisions. |
 | **Decompiler Traps**| `antiDecompiler` | Emits bytecode-valid, source-illegal constructs designed to crash CFR, Fernflower, and Procyon. |
@@ -133,21 +136,29 @@ defaults {
 
 `defaults.exempt` applies to every transformation. A section-level `exempt` list adds rules without replacing the shared list. `defaults.naming` applies to `classRenamer`, `methodRenamer`, `fieldRenamer`, and `recordMetadata`; values declared in a section override the shared values.
 
+For a Fabric release that only needs resource and metadata cleanup, use `config/resource-hardening.hocon`. It is intentionally compatible with incomplete game classpaths; do not combine its `compatibility.allowIncompleteClasspath` override with bytecode transformations unless the dependencies have been reviewed.
+
 ---
 
 ## Reproducible Profile Benchmark
 
-Run `python3 scripts/benchmark.py` after building the tool. The script generates a two-class Java 17 fixture with eight integer arithmetic/bitwise kernels and a non-eligible long-arithmetic method, transforms it with a fixed seed, verifies every result with `-Xverify:all`, and reports the median of three runs.
+Run `python3 scripts/benchmark.py` after building the tool. The script generates a two-class Java 17 fixture with eight integer arithmetic/bitwise kernels and a non-eligible long-arithmetic method, transforms it with a fixed seed, verifies every result with `-Xverify:all`, and reports medians across the configured runs.
 
-The measurements below were recorded for 0.2.0 on Linux x86_64, AMD Ryzen 7 7735HS, OpenJDK 21.0.12. The input archive is 6.98 KiB. They compare profiles on the same fixture; they are not a comparison with other obfuscators or a prediction for an application workload.
+See [the measured overhead comparison](docs/PERFORMANCE.md) for the current optimization results and protection tradeoffs.
+
+For comparisons between builds, use `python3 scripts/benchmark.py --jar /path/to/obfuscator.jar --runs 5 --profiles strong full`. Output includes the result checksum, uncompressed class bytes, and class count. Every transformed checksum must match the input. Run builds sequentially without concurrent tests to reduce timing noise.
+
+Runtime guards and exception-return dispatch target input methods, including semantic bridges and input synthetic methods. Generated arithmetic helpers are not wrapped again for each operation. Exception returns use a shared stackless token and a method-local result, preserving raw floating-point bits and concurrent/reentrant calls without `ThreadLocal` traffic. Field indirection emits only accessors that are actually used; output archives use maximum DEFLATE compression. These changes retain configured input-method coverage but reduce redundant helper layering; equal resistance to reverse engineering is not established by runtime tests.
+
+The measurements below were recorded for 0.2.2-beta on Linux x86_64 with OpenJDK 21.0.12.1. The input archive is 6.98 KiB. They are medians from five runs on the same fixture; they are not a comparison with other obfuscators or a prediction for an application workload.
 
 | Profile | Obfuscation | Obfuscator RSS | Output | Semantic Core Methods | Process Launch | Kernel Loop | Process RSS |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| **Input baseline** | — | — | 6.98 KiB | 0 | 242.0 ms | 14.34 ms | 41.67 MiB |
-| **light** | 508.9 ms | 76.06 MiB | 7.26 KiB (+4.1%) | 0 | 253.4 ms | 17.29 ms | 41.88 MiB |
-| **balanced** | 661.6 ms | 87.59 MiB | 16.65 KiB (+138.6%) | 0 | 332.1 ms | 51.21 ms | 43.59 MiB |
-| **strong** | 1,001.8 ms | 131.47 MiB | 80.95 KiB (+1,059.9%) | 3 | 663.5 ms | 190.33 ms | 54.72 MiB |
-| **full** | 987.3 ms | 133.77 MiB | 295.75 KiB (+4,138.0%) | 3 | 3,462.9 ms | 1,397.86 ms | 88.41 MiB |
+| **Input baseline** | — | — | 6.98 KiB | 0 | 131.56 ms | 9.47 ms | 50.52 MiB |
+| **light** | 269.12 ms | 92.21 MiB | 7.26 KiB (+4.1%) | 0 | 141.56 ms | 9.77 ms | 50.77 MiB |
+| **balanced** | 328.79 ms | 97.98 MiB | 16.65 KiB (+138.5%) | 0 | 190.65 ms | 33.24 ms | 52.34 MiB |
+| **strong** | 461.36 ms | 124.39 MiB | 68.27 KiB (+879.0%) | 3 | 295.62 ms | 78.53 ms | 60.89 MiB |
+| **full** | 561.55 ms | 143.52 MiB | 282.96 KiB (+3,959.0%) | 3 | 1,555.99 ms | 603.60 ms | 98.21 MiB |
 
 `semanticCore` is enabled through the inherited full profile, so it is active in `strong` and `full`; light and balanced intentionally report zero protected methods. The fixture is designed to exercise this pass and therefore exaggerates the overhead of high-strength profiles. Keep hot code excluded with `hotPaths.exclude`; use full protection for small, sensitive routines rather than a latency-sensitive loop.
 
@@ -230,7 +241,7 @@ nullfuscator <input.jar> [output.jar] [options]
 | `--verbose` | `-v` | — | Enables detailed stderr diagnostics for every transformation pass. |
 | `--quiet` | `-q` | — | Suppresses non-essential informational output. |
 | `--no-color` | — | — | Disables ANSI terminal coloring. |
-| `--version` | `-V` | — | Prints NULLFUSCATOR version (`0.2.1`). |
+| `--version` | `-V` | — | Prints NULLFUSCATOR version (`0.2.2-beta`). |
 | `--help` | `-h` | — | Displays command-line help summary. |
 
 ### Commands
@@ -242,6 +253,15 @@ nullfuscator <input.jar> [output.jar] [options]
 | `check` | `nullfuscator check <input.jar>` | Fast standalone preflight verification without writing output. |
 | `retrace` | `nullfuscator retrace <mapping> [trace]` | Demangles obfuscated stack traces (supports positional args, `-m`, `-t`, or stdin). |
 | `mapping-info` | `nullfuscator mapping-info <mapping>` | Displays mapping metadata, seed, format, and input SHA-256 digest. |
+
+### Enum symbols
+
+Enum helper methods and ordinary fields are renamed while `values()`, `valueOf(String)`
+and runtime enum names are preserved. To also hide enum constant field symbols for
+reviewed application classes, set `fieldRenamer.enumConstantsInclude = ["class{^my/app/}"]`.
+This option defaults to empty: consumers using `Class.getField(enum.name())` require
+the original field names. String encryption hides runtime names in the archive;
+`Enum.name()`, saved enum values and Java enum serialization retain their identities.
 
 ### Stack Trace Retracing
 Demangle obfuscated production crash traces back to original class, method, and line numbers:
@@ -266,7 +286,7 @@ Integrate NULLFUSCATOR directly into your Gradle build pipeline:
 ```groovy
 task obfuscate(type: JavaExec) {
     dependsOn jar
-    classpath = files('tools/nullfuscator-0.2.1.jar')
+    classpath = files('tools/nullfuscator-0.2.2-beta.jar')
     mainClass = 'com.nullfuscator.obf.core.Main'
 
     args = [

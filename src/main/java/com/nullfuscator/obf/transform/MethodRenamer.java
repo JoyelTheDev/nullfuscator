@@ -73,9 +73,10 @@ public final class MethodRenamer implements Transformer {
         for (ClassNode cn : targets) targetOwners.add(cn.name);
         int skippedLib = 0;
         for (ClassNode cn : targets) {
-            if ((cn.access & (Opcodes.ACC_ENUM | Opcodes.ACC_ANNOTATION)) != 0) continue;
+            if ((cn.access & Opcodes.ACC_ANNOTATION) != 0) continue;
             for (MethodNode mn : cn.methods) {
                 if (!eligible(mn)) continue;
+                if (isEnumFactory(cn, mn)) continue;
                 if (isRecordAccessor(cn, mn)) continue;
                 if (hasMixinAnnotation(mn)) continue;
                 if (matchesNonOwnedSuper(cn.name, mn.name, mn.desc, all, superOf, ifacesOf, libLoader)) {
@@ -104,7 +105,7 @@ public final class MethodRenamer implements Transformer {
                     ClassNode cn = d.owner();
                     MethodNode mn = d.method();
                     if (!targetOwners.contains(cn.name)
-                            || (cn.access & (Opcodes.ACC_ENUM | Opcodes.ACC_ANNOTATION)) != 0
+                            || (cn.access & Opcodes.ACC_ANNOTATION) != 0
                             || isRecordAccessor(cn, mn)
                             || hasMixinAnnotation(mn)
                             || (!renamePublic && (mn.access & Opcodes.ACC_PUBLIC) != 0)
@@ -171,6 +172,13 @@ public final class MethodRenamer implements Transformer {
         ctx.log().debug("methodRenamer renamed " + renameMethods.size()
                 + " methods (virtual=" + virtualRenamed
                 + ", skippedForLibrary=" + skippedLib + ")");
+    }
+
+    private static boolean isEnumFactory(ClassNode owner, MethodNode method) {
+        if ((owner.access & Opcodes.ACC_ENUM) == 0) return false;
+        return (method.name.equals("values") && method.desc.equals("()[L" + owner.name + ";"))
+                || (method.name.equals("valueOf")
+                    && method.desc.equals("(Ljava/lang/String;)L" + owner.name + ";"));
     }
 
     private static boolean eligible(MethodNode mn) {

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.2-beta
+
+- Reduced archive growth and runtime overhead in strong and full profiles by avoiding repeated protection of generated helpers.
+- Reworked exception-return transport to use a shared stackless token and invocation-local results.
+- Removed unused field indirection accessors and unused anti-debug detector classes before later transformations expand them.
+- Added checksum-checked profile benchmarking with archive and class-size measurements, plus return-transport concurrency regression coverage.
+- Added release resource, annotation, Fabric and enum compatibility improvements.
+
 ## 0.2.1 — beta
 
 - Added shared configuration defaults for exclusions and naming options.

@@ -31,6 +31,7 @@ public final class AntiDebugTransformer implements Transformer {
 
     @Override
     public void transform(ObfContext ctx) {
+        ctx.initializePolicies();
         if (ctx.isModularJar()) {
 
             ctx.log().warn("antiDebug: skipped for modular JAR (would require java.management)");
@@ -67,10 +68,11 @@ public final class AntiDebugTransformer implements Transformer {
         }
 
         Random rnd = ctx.random();
+        java.util.Set<String> usedDetectors = new java.util.HashSet<>();
         int guarded = 0;
         for (ClassNode cn : targets) {
             for (MethodNode mn : cn.methods) {
-                if (ctx.isHotPath(cn, mn)) continue;
+                if (!ctx.isInputMethod(mn) || ctx.isHotPath(cn, mn)) continue;
                 if ((mn.access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_NATIVE)) != 0) continue;
                 if (mn.instructions == null || mn.instructions.size() == 0) continue;
                 if (mn.name.equals("<init>") || mn.name.equals("<clinit>")) continue;
@@ -78,6 +80,7 @@ public final class AntiDebugTransformer implements Transformer {
                 if (rnd.nextInt(100) >= percent) continue;
 
                 String det = detectors.get(rnd.nextInt(detectors.size()));
+                usedDetectors.add(det);
                 InsnList g = new InsnList();
                 LabelNode ok = new LabelNode();
                 g.add(new MethodInsnNode(Opcodes.INVOKESTATIC, det, "detected", "()Z", false));
@@ -91,10 +94,11 @@ public final class AntiDebugTransformer implements Transformer {
                 guarded++;
             }
         }
-        if (guarded == 0) {
-            for (String detector : detectors) ctx.removeClass(detector);
-            detectors.clear();
-        }
+        detectors.removeIf(detector -> {
+            if (usedDetectors.contains(detector)) return false;
+            ctx.removeClass(detector);
+            return true;
+        });
         ctx.log().debug("antiDebug: guarded " + guarded + " methods with " + detectors.size() + " detectors");
     }
 

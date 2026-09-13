@@ -70,6 +70,7 @@ public final class FieldIndirectionTransformer implements Transformer {
         }
         if (map.isEmpty()) return;
 
+        java.util.Set<String> used = new java.util.HashSet<>();
         int rewritten = 0;
         for (ClassNode cn : targets) {
             if (ctx.isDispersionCarrier(cn)) continue;
@@ -98,24 +99,34 @@ public final class FieldIndirectionTransformer implements Transformer {
                     if (op == Opcodes.GETFIELD) {
                         mn.instructions.set(fin, new MethodInsnNode(Opcodes.INVOKESTATIC,
                                 fin.owner, acc.get(), "(L" + fin.owner + ";)" + fin.desc, false));
+                        used.add(fin.owner + '\0' + acc.get());
                         rewritten++;
                     } else if (op == Opcodes.GETSTATIC) {
                         mn.instructions.set(fin, new MethodInsnNode(Opcodes.INVOKESTATIC,
                                 fin.owner, acc.get(), "()" + fin.desc, false));
+                        used.add(fin.owner + '\0' + acc.get());
                         rewritten++;
                     } else if (op == Opcodes.PUTFIELD && acc.set() != null) {
                         mn.instructions.set(fin, new MethodInsnNode(Opcodes.INVOKESTATIC,
                                 fin.owner, acc.set(), "(L" + fin.owner + ";" + fin.desc + ")V", false));
+                        used.add(fin.owner + '\0' + acc.set());
                         rewritten++;
                     } else if (op == Opcodes.PUTSTATIC && acc.set() != null) {
                         mn.instructions.set(fin, new MethodInsnNode(Opcodes.INVOKESTATIC,
                                 fin.owner, acc.set(), "(" + fin.desc + ")V", false));
+                        used.add(fin.owner + '\0' + acc.set());
                         rewritten++;
                     }
                 }
             }
         }
-        ctx.log().debug("fieldIndirection: " + map.size() + " accessors, " + rewritten + " accesses routed");
+        int retained = 0;
+        for (ClassNode cn : targets) {
+            cn.methods.removeIf(method -> generated.contains(method)
+                    && !used.contains(cn.name + '\0' + method.name));
+            for (MethodNode method : cn.methods) if (generated.contains(method)) retained++;
+        }
+        ctx.log().debug("fieldIndirection: " + retained + " accessors, " + rewritten + " accesses routed");
     }
 
     private static MethodNode buildGetter(String name, String owner, String fname, String fdesc,

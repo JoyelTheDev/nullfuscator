@@ -10,13 +10,18 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 subprocess.run(["python3", str(ROOT / "scripts/build.py")], check=True)
+subprocess.run(["python3", str(ROOT / "scripts/test-enums.py")], check=True)
 with tempfile.TemporaryDirectory(prefix="growth-regression-") as temp:
     jar = ROOT / "build/nullfuscator-obf.jar"
     subprocess.run(["javac", "--release", "17", "-cp", str(jar), "-d", temp,
                     str(ROOT / "src/test/java/com/nullfuscator/obf/GrowthRegression.java"),
+                    str(ROOT / "src/test/java/com/nullfuscator/obf/RuntimeOverheadRegression.java"),
                     str(ROOT / "src/test/java/com/nullfuscator/obf/CompactGrowthRegression.java"),
                     str(ROOT / "src/test/java/com/nullfuscator/obf/AntiAiRegression.java"),
                     str(ROOT / "src/test/java/com/nullfuscator/obf/SemanticCoreRegression.java"),
+                    str(ROOT / "src/test/java/com/nullfuscator/obf/ClassRenamerRegression.java"),
+                    str(ROOT / "src/test/java/com/nullfuscator/obf/MixinProtectionRegression.java"),
+                    str(ROOT / "src/test/java/com/nullfuscator/obf/ReleaseHardeningRegression.java"),
                     str(ROOT / "src/test/java/com/nullfuscator/obf/ConfigRegression.java")], check=True)
     subprocess.run(["java", "-Xverify:all", "-Xmx256m", "-cp", os.pathsep.join([temp, str(jar)]),
                     "com.nullfuscator.obf.GrowthRegression"], check=True)
@@ -32,6 +37,18 @@ with tempfile.TemporaryDirectory(prefix="growth-regression-") as temp:
 
     subprocess.run(["java", "-Xverify:all", "-Xmx256m", "-cp", os.pathsep.join([temp, str(jar)]),
                     "com.nullfuscator.obf.ConfigRegression"], check=True)
+
+    subprocess.run(["java", "-Xverify:all", "-Xmx256m", "-cp", os.pathsep.join([temp, str(jar)]),
+                    "com.nullfuscator.obf.ClassRenamerRegression"], check=True)
+
+    subprocess.run(["java", "-Xverify:all", "-Xmx256m", "-cp", os.pathsep.join([temp, str(jar)]),
+                    "com.nullfuscator.obf.MixinProtectionRegression"], check=True)
+
+    subprocess.run(["java", "-Xverify:all", "-Xmx256m", "-cp", os.pathsep.join([temp, str(jar)]),
+                    "com.nullfuscator.obf.ReleaseHardeningRegression"], check=True)
+
+    subprocess.run(["java", "-Xverify:all", "-Xmx256m", "-cp", os.pathsep.join([temp, str(jar)]),
+                    "com.nullfuscator.obf.RuntimeOverheadRegression"], check=True)
 
     work = Path(temp)
     source = work / "Smoke.java"

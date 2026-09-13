@@ -1,6 +1,7 @@
 package com.nullfuscator.obf.transform;
 
 import com.nullfuscator.obf.core.ObfContext;
+import com.nullfuscator.obf.core.ExemptMatcher;
 import com.nullfuscator.obf.core.Transformer;
 import com.nullfuscator.obf.util.NameGenerator;
 import org.objectweb.asm.Opcodes;
@@ -27,6 +28,7 @@ public final class FieldRenamer implements Transformer {
     @Override
     public void transform(ObfContext ctx) {
         var section = ctx.config().section(id());
+        ExemptMatcher enumConstants = new ExemptMatcher(section.getStringList("enumConstantsInclude"));
         List<String> chars = section.getStringList("chars");
         String[] alphabet = chars.isEmpty() ? DEFAULT_ALPHABET : chars.toArray(new String[0]);
         int depth = Math.max(1, Math.min(32, section.getInt("depth", 8)));
@@ -51,7 +53,6 @@ public final class FieldRenamer implements Transformer {
 
         final Map<String, String> renameFields = new HashMap<>();
         for (ClassNode cn : ctx.targets(id())) {
-            if ((cn.access & Opcodes.ACC_ENUM) != 0) continue;
             if ((cn.access & Opcodes.ACC_RECORD) != 0
                     || (cn.recordComponents != null && !cn.recordComponents.isEmpty())) continue;
             if (reflectionSensitive(cn)) continue;
@@ -60,7 +61,7 @@ public final class FieldRenamer implements Transformer {
                 if (fn.visibleAnnotations != null && fn.visibleAnnotations.stream()
                         .anyMatch(a -> !GsonSchemaTransformer.isGsonAnnotation(a.desc))) continue;
                 if ("serialVersionUID".equals(fn.name) || "serialPersistentFields".equals(fn.name)) continue;
-                if ((fn.access & Opcodes.ACC_ENUM) != 0) continue;
+                if ((fn.access & Opcodes.ACC_ENUM) != 0 && !enumConstants.matches(cn.name)) continue;
                 if (!mixinBlob.isEmpty() && mixinBlob.contains(fn.name)) continue;
                 String nf = gen.nextRandom(ctx.random(), depth);
                 renameFields.put(key(cn.name, fn.name, fn.desc), nf);

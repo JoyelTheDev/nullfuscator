@@ -1,0 +1,25 @@
+# Full pipeline for a Fabric client JAR. The overrides acknowledge that the
+# Minecraft runtime and two shaded build-only parents are supplied externally.
+baseConfig = "full.hocon"
+defaults.exempt = [ "class{^dev/murk/mixin/}", "class{^ru/ezdlc/mixin/}" ]
+compatibility {
+  allowMultiReleaseRename: true
+  allowIncompleteClasspath: true
+}
+
+# Preserve generic signatures so Gson can deserialize generic fields and collections
+sourceStrip { stripSignatures: false }
+
+# Aliases are displayed by the client UI through reflection. Removing this
+# annotation hides module aliases but disables their display/search aliases.
+annotationSanitizer { enabled: true, descriptors: [ "aethereal/annotation/Aliases" ] }
+
+# Hide client enum field symbols; preserve runtime names for saved settings.
+# This is opt-in because consumers using Class.getField(enum.name()) need the
+# original symbols. EZDLC's settings and bundled Gson use Enum.name()/values.
+fieldRenamer { enumConstantsInclude: [ "class{^aethereal/}" ] }
+
+# These loaders construct file paths from directory fragments, basenames and
+# extensions at runtime. Keep the complete top-level trees stable: rewriting
+# only the literal fragment would otherwise point at a path that cannot exist.
+resourceRenamer { excludeDirectories: [ "fonts", "icons", "shaders" ] }

@@ -1,0 +1,5 @@
+# Safe release cleanup for Fabric/Minecraft JARs. It deliberately changes only
+# resources and metadata, so it can be used with multi-release dependency JARs.
+resourceRenamer { enabled: true, excludeNamespaces: [ "minecraft" ], depth: 6 }
+releaseHardening { enabled: true, stripMavenMetadata: true, stripFabricDescription: true }
+compatibility { allowIncompleteClasspath: true }

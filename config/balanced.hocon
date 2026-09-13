@@ -4,6 +4,8 @@ classRenamer { enabled: true, renameMain: false, depth: 6 }
 methodRenamer { enabled: true, renameVirtual: false, renamePublic: false, depth: 6 }
 fieldRenamer { enabled: true, depth: 6 }
 stringEncryption { enabled: true, type: POLYMORPHIC }
+resourceRenamer { enabled: true, excludeNamespaces: [ "minecraft" ], depth: 6 }
+releaseHardening { enabled: true, stripMavenMetadata: true, stripFabricDescription: true }
 numberEncryption { enabled: true, layers: 2 }
 safeControlFlow { enabled: true, level: 1 }
 crossClassDispersion {

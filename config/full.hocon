@@ -10,6 +10,8 @@ defaults {
 }
 
 sourceStrip { enabled: true, stripLineNumbers: true, stripLocalVars: true, stripSignatures: true }
+resourceRenamer { enabled: true, excludeNamespaces: [ "minecraft" ], depth: 8 }
+releaseHardening { enabled: true, stripMavenMetadata: true, stripFabricDescription: true }
 semanticCore { enabled: true, percent: 45, minOperations: 3, maxMethods: 64 }
 semanticFabric { enabled: true, percent: 100, minArithmeticOps: 3, maxMethods: 96, carriers: 12 }
 

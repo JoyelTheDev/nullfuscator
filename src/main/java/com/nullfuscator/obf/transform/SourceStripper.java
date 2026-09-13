@@ -20,7 +20,7 @@ public final class SourceStripper implements Transformer {
             if (ctx.isExempt(id(), cn)) continue;
             cn.sourceFile = null;
             cn.sourceDebug = null;
-            boolean preserveSchema = cn.fields.stream().anyMatch(GsonSchemaTransformer::hasName);
+            boolean preserveSchema = cn.fields.stream().anyMatch(GsonSchemaTransformer::hasName) || isTypeToken(cn);
             if (stripSignatures && !preserveSchema) {
                 cn.signature = null;
                 for (var fn : cn.fields) fn.signature = null;
@@ -44,5 +44,18 @@ public final class SourceStripper implements Transformer {
             classes++;
         }
         ctx.log().debug("sourceStrip touched " + classes + " classes");
+    }
+
+    private static boolean isTypeToken(ClassNode cn) {
+        if (cn.name != null && (cn.name.endsWith("TypeToken") || cn.name.endsWith("TypeReference")))
+            return true;
+        if (cn.superName != null && (cn.superName.endsWith("TypeToken") || cn.superName.endsWith("TypeReference")))
+            return true;
+        if (cn.interfaces != null) {
+            for (String iface : cn.interfaces) {
+                if (iface.endsWith("TypeToken") || iface.endsWith("TypeReference")) return true;
+            }
+        }
+        return false;
     }
 }

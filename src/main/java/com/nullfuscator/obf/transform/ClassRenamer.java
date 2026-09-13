@@ -7,6 +7,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
+import org.objectweb.asm.tree.InnerClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
 import java.nio.charset.StandardCharsets;
@@ -50,7 +51,6 @@ public final class ClassRenamer implements Transformer {
         protectedNames.addAll(Remapping.resourceClassReferences(ctx));
         String mainClass = Remapping.mainClassInternalName(ctx);
         if (!renameMain && mainClass != null) protectedNames.add(mainClass);
-        protectedNames.addAll(Remapping.resourceClassReferences(ctx));
         String mixinBlob = Remapping.mixinJsonBlob(ctx);
 
         final Map<String, String> classMap = new HashMap<>();
@@ -81,10 +81,32 @@ public final class ClassRenamer implements Transformer {
                 return mapped != null ? mapped : internalName;
             }
         });
+        sanitizeInnerClassLabels(ctx, classMap, gen, depth);
         rewriteManifestEntrypoints(ctx, classMap);
         rewriteServiceDescriptors(ctx, classMap);
 
         ctx.log().debug("classRenamer renamed " + classMap.size() + " classes");
+    }
+
+    private static void sanitizeInnerClassLabels(ObfContext ctx, Map<String, String> classMap,
+                                                  NameGenerator gen, int depth) {
+        Set<String> renamed = new HashSet<>(classMap.values());
+        for (ClassNode cn : ctx.classes()) {
+            if (cn.innerClasses == null) continue;
+            for (InnerClassNode inner : cn.innerClasses) {
+                if (inner.innerName != null) gen.reserve(inner.innerName);
+            }
+        }
+        int changed = 0;
+        for (ClassNode cn : ctx.classes()) {
+            if (cn.innerClasses == null) continue;
+            for (InnerClassNode inner : cn.innerClasses) {
+                if (inner.name == null || !renamed.contains(inner.name) || inner.innerName == null) continue;
+                inner.innerName = gen.nextRandom(ctx.random(), depth);
+                changed++;
+            }
+        }
+        if (changed > 0) ctx.log().debug("classRenamer hid " + changed + " inner-class labels");
     }
 
     private static void rewriteManifestEntrypoints(ObfContext ctx, Map<String, String> classMap) {

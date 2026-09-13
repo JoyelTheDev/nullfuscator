@@ -80,7 +80,7 @@ public final class Remapping {
                     for (String key : new String[] { "mixins", "client", "server" }) {
                         if (!config.hasPath(key)) continue;
                         for (String value : config.getStringList(key))
-                            references.add((value.indexOf('.') >= 0 || pkg.isEmpty() ? value : pkg + "." + value)
+                            references.add((pkg.isEmpty() ? value : pkg + "." + value)
                                     .replace('.', '/'));
                     }
                 } catch (RuntimeException e) { ctx.log().warn("cannot inspect mixin references in " + path); }

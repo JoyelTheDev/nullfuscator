@@ -1,0 +1,63 @@
+{
+  "environment": {
+    "java": "openjdk version \"21.0.12.1\" 2026-08-18",
+    "runs": 5
+  },
+  "input_bytes": 7146,
+  "baseline": {
+    "checksum": "79434320",
+    "launch_ms": 131.56162399900495,
+    "kernel_ms": 9.46866,
+    "process_rss_mib": 50.515625
+  },
+  "profiles": {
+    "light": {
+      "obfuscation_ms": 269.12420600274345,
+      "obfuscator_rss_mib": 92.21484375,
+      "output_bytes": 7437,
+      "class_bytes": 20882,
+      "classes": 2,
+      "semantic_core_methods": 0,
+      "checksum": "79434320",
+      "launch_ms": 141.5583689995401,
+      "kernel_ms": 9.77215,
+      "process_rss_mib": 50.76953125
+    },
+    "balanced": {
+      "obfuscation_ms": 328.79048399991007,
+      "obfuscator_rss_mib": 97.9765625,
+      "output_bytes": 17046,
+      "class_bytes": 34224,
+      "classes": 6,
+      "semantic_core_methods": 0,
+      "checksum": "79434320",
+      "launch_ms": 190.65283199961414,
+      "kernel_ms": 33.240084,
+      "process_rss_mib": 52.33984375
+    },
+    "strong": {
+      "obfuscation_ms": 461.3647279984434,
+      "obfuscator_rss_mib": 124.390625,
+      "output_bytes": 69908,
+      "class_bytes": 118802,
+      "classes": 36,
+      "semantic_core_methods": 3,
+      "checksum": "79434320",
+      "launch_ms": 295.6192750025366,
+      "kernel_ms": 78.526833,
+      "process_rss_mib": 60.88671875
+    },
+    "full": {
+      "obfuscation_ms": 561.5540530016006,
+      "obfuscator_rss_mib": 143.5234375,
+      "output_bytes": 289749,
+      "class_bytes": 451275,
+      "classes": 83,
+      "semantic_core_methods": 3,
+      "checksum": "79434320",
+      "launch_ms": 1555.988083997363,
+      "kernel_ms": 603.601771,
+      "process_rss_mib": 98.2109375
+    }
+  }
+}

@@ -46,9 +46,14 @@ public final class Preflight {
         }
         if (!missing.isEmpty()) {
             String sample = missing.stream().limit(8).reduce((a, b) -> a + ", " + b).orElse("");
-            throw new IllegalArgumentException("incomplete classpath: missing direct hierarchy types: " + sample
+            String message = "incomplete classpath: missing direct hierarchy types: " + sample
                     + (missing.size() > 8 ? " (and " + (missing.size() - 8) + " more)" : "")
-                    + "; add dependency JARs to libs");
+                    + "; add dependency JARs to libs";
+            if (ctx.config().section("compatibility").getBoolean("allowIncompleteClasspath", false)) {
+                warn(ctx, message + " (explicit compatibility override enabled)");
+            } else {
+                throw new IllegalArgumentException(message);
+            }
         }
     }
 

@@ -69,8 +69,16 @@ public final class ObfContext {
     public ObfConfig config() { return config; }
 
     public boolean isExempt(String sectionId, ClassNode cn) {
-        return cn == null || config.section(sectionId).isExempt(cn.name)
+        return cn == null || isMixin(cn) || config.section(sectionId).isExempt(cn.name)
                 || config.section(sectionId).isExempt(originalName(cn.name));
+    }
+
+    private static boolean isMixin(ClassNode cn) {
+        String marker = "Lorg/spongepowered/asm/mixin/Mixin;";
+        return (cn.visibleAnnotations != null
+                && cn.visibleAnnotations.stream().anyMatch(a -> marker.equals(a.desc)))
+                || (cn.invisibleAnnotations != null
+                && cn.invisibleAnnotations.stream().anyMatch(a -> marker.equals(a.desc)));
     }
 
     public String originalName(String name) { return originalNames.getOrDefault(name, name); }

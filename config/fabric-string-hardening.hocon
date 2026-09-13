@@ -1,0 +1,10 @@
+# Encrypt client-owned literals without touching shaded dependencies or Mixin
+# classes. Use this profile for the final Fabric release after smoke-testing it.
+resourceRenamer { enabled: true, excludeNamespaces: [ "minecraft" ], depth: 6 }
+releaseHardening { enabled: true, stripMavenMetadata: true, stripFabricDescription: true }
+stringEncryption {
+  enabled: true
+  type: STANDARD
+  exempt = [ "class{^(?!aethereal/).*}" ]
+}
+compatibility { allowIncompleteClasspath: true }

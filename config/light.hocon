@@ -4,6 +4,8 @@ classRenamer { enabled: true, renameMain: false, depth: 5 }
 methodRenamer { enabled: true, renameVirtual: false, renamePublic: false, depth: 5 }
 fieldRenamer { enabled: true, depth: 5 }
 stringEncryption { enabled: true, type: STANDARD }
+resourceRenamer { enabled: true, excludeNamespaces: [ "minecraft" ], depth: 5 }
+releaseHardening { enabled: true, stripMavenMetadata: true, stripFabricDescription: true }
 
 hotPaths.exclude = [
   "annotation{(^|/)Hot(Path)?$}",

@@ -84,6 +84,7 @@ public final class JarIO {
         try (URLClassLoader loader = new URLClassLoader(urls.toArray(new URL[0]),
                      HierarchyClassWriter.class.getClassLoader());
              JarOutputStream out = new JarOutputStream(Files.newOutputStream(output))) {
+            out.setLevel(java.util.zip.Deflater.BEST_COMPRESSION);
             var hierarchy = new HierarchyClassWriter.Hierarchy(ctx.classMap(), loader);
             // JarInputStream only recognizes a manifest at the start of the archive.
             byte[] manifest = ctx.resources().get("META-INF/MANIFEST.MF");

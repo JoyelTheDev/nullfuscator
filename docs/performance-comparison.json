@@ -1,0 +1,84 @@
+{
+  "fixture": "scripts/benchmark.py: eight integer kernels, 20,000 warmup / 100,000 measured rounds",
+  "seed": 20260910,
+  "before_jar_sha256": "579782627ff88a172c57edf259362bd217cbb1aa17e2e133f2acdb6240205a3b",
+  "after_jar_sha256": "1812aa760c20fac837c655c526c95e9761ae28ec8b23c9472fa38abae05a8b18",
+  "before": {
+    "environment": {
+      "java": "openjdk version \"21.0.12.1\" 2026-08-18",
+      "runs": 5
+    },
+    "input_bytes": 7146,
+    "baseline": {
+      "checksum": "79434320",
+      "launch_ms": 190.38810900019598,
+      "kernel_ms": 12.607408,
+      "process_rss_mib": 50.19140625
+    },
+    "profiles": {
+      "strong": {
+        "obfuscation_ms": 719.6090600009484,
+        "obfuscator_rss_mib": 146.4765625,
+        "output_bytes": 82889,
+        "class_bytes": 141617,
+        "classes": 39,
+        "semantic_core_methods": 3,
+        "checksum": "79434320",
+        "launch_ms": 473.7325750029413,
+        "kernel_ms": 148.613309,
+        "process_rss_mib": 64.3359375
+      },
+      "full": {
+        "obfuscation_ms": 775.5398350018368,
+        "obfuscator_rss_mib": 145.30078125,
+        "output_bytes": 302849,
+        "class_bytes": 469656,
+        "classes": 83,
+        "semantic_core_methods": 3,
+        "checksum": "79434320",
+        "launch_ms": 2533.5179699977743,
+        "kernel_ms": 998.068906,
+        "process_rss_mib": 98.2265625
+      }
+    }
+  },
+  "after": {
+    "environment": {
+      "java": "openjdk version \"21.0.12.1\" 2026-08-18",
+      "runs": 5
+    },
+    "input_bytes": 7146,
+    "baseline": {
+      "checksum": "79434320",
+      "launch_ms": 173.32847099896753,
+      "kernel_ms": 12.84813,
+      "process_rss_mib": 50.32421875
+    },
+    "profiles": {
+      "strong": {
+        "obfuscation_ms": 694.9122080004599,
+        "obfuscator_rss_mib": 124.49609375,
+        "output_bytes": 69908,
+        "class_bytes": 118802,
+        "classes": 36,
+        "semantic_core_methods": 3,
+        "checksum": "79434320",
+        "launch_ms": 399.8170380000374,
+        "kernel_ms": 107.317442,
+        "process_rss_mib": 59.984375
+      },
+      "full": {
+        "obfuscation_ms": 765.2364669993403,
+        "obfuscator_rss_mib": 144.734375,
+        "output_bytes": 289749,
+        "class_bytes": 451275,
+        "classes": 83,
+        "semantic_core_methods": 3,
+        "checksum": "79434320",
+        "launch_ms": 2079.90907400017,
+        "kernel_ms": 765.834439,
+        "process_rss_mib": 97.73046875
+      }
+    }
+  }
+}

@@ -1,6 +1,7 @@
 package com.nullfuscator.obf.core;
 
 import com.nullfuscator.obf.transform.AntiAiTransformer;
+import com.nullfuscator.obf.transform.AnnotationSanitizerTransformer;
 import com.nullfuscator.obf.transform.AntiDebugTransformer;
 import com.nullfuscator.obf.transform.AntiDecompilerTransformer;
 import com.nullfuscator.obf.transform.AntiDeobfuscatorTransformer;
@@ -21,6 +22,8 @@ import com.nullfuscator.obf.transform.MethodRelocationTransformer;
 import com.nullfuscator.obf.transform.MethodExtractionTransformer;
 import com.nullfuscator.obf.transform.FieldPackingTransformer;
 import com.nullfuscator.obf.transform.ReturnFlowTransformer;
+import com.nullfuscator.obf.transform.ResourceRenamer;
+import com.nullfuscator.obf.transform.ReleaseHardeningTransformer;
 import com.nullfuscator.obf.transform.SemanticFabricTransformer;
 import com.nullfuscator.obf.transform.SourceStripper;
 import com.nullfuscator.obf.transform.StringEncryptionTransformer;
@@ -536,6 +539,11 @@ public final class Main {
         p.add(new com.nullfuscator.obf.transform.GsonSchemaTransformer());
 
         p.add(new SourceStripper());
+
+        p.add(new AnnotationSanitizerTransformer());
+
+        p.add(new ResourceRenamer());
+        p.add(new ReleaseHardeningTransformer());
 
         p.add(new com.nullfuscator.obf.transform.SemanticCoreTransformer());
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 import json
 import os
 from pathlib import Path
@@ -7,6 +8,7 @@ import statistics
 import subprocess
 import tempfile
 import time
+import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 JAR = ROOT / "build/nullfuscator-obf.jar"
@@ -78,23 +80,37 @@ def write_fixture(directory):
 }}\n""", encoding="utf-8")
 
 
-def runtime_samples(artifact):
+def runtime_samples(artifact, expected=None):
     values = []
     launches = []
     rss = []
+    checksum = expected
     for _ in range(RUNS):
         seconds, peak_rss, result = timed(["java", "-Xverify:all", "-jar", artifact])
         value, nanos = result.stdout.strip().split()
         values.append(int(nanos) / 1_000_000)
         launches.append(seconds * 1000)
         rss.append(peak_rss / 1024)
-        if not value:
-            raise RuntimeError("benchmark produced no result")
-    return {"launch_ms": median(launches), "kernel_ms": median(values), "process_rss_mib": median(rss)}
+        if checksum is None:
+            checksum = value
+        if value != checksum:
+            raise RuntimeError(f"{artifact}: expected checksum {checksum}, got {value}")
+    return {"checksum": checksum, "launch_ms": median(launches), "kernel_ms": median(values), "process_rss_mib": median(rss)}
 
 
 def main():
+    global JAR, RUNS, PROFILES
+    parser = argparse.ArgumentParser(description="Measure verified output size and runtime against the input checksum")
+    parser.add_argument("--jar", type=Path, default=JAR)
+    parser.add_argument("--runs", type=int, default=RUNS)
+    parser.add_argument("--profiles", nargs="+", choices=PROFILES, default=PROFILES)
+    args = parser.parse_args()
+    if args.runs < 1:
+        parser.error("--runs must be positive")
+    JAR, RUNS, PROFILES = args.jar.resolve(), args.runs, args.profiles
     if not JAR.is_file():
+        if JAR != ROOT / "build/nullfuscator-obf.jar":
+            parser.error(f"JAR does not exist: {JAR}")
         run(["python3", ROOT / "scripts/build.py"])
     with tempfile.TemporaryDirectory(prefix="nullfuscator-benchmark-") as raw:
         work = Path(raw)
@@ -118,9 +134,12 @@ def main():
                 memory.append(rss / 1024)
                 match = re.search(r"semanticCore: protected=(\d+) methods", result.stderr)
                 protected.append(int(match.group(1)) if match else 0)
+            with zipfile.ZipFile(output) as archive:
+                classes = [item for item in archive.infolist() if item.filename.endswith(".class")]
+                class_bytes = sum(item.file_size for item in classes)
             results["profiles"][profile] = {"obfuscation_ms": median(wall), "obfuscator_rss_mib": median(memory),
-                                             "output_bytes": output.stat().st_size, "semantic_core_methods": median(protected),
-                                             **runtime_samples(output)}
+                                             "output_bytes": output.stat().st_size, "class_bytes": class_bytes, "classes": len(classes), "semantic_core_methods": median(protected),
+                                             **runtime_samples(output, results["baseline"]["checksum"])}
         print(json.dumps(results, indent=2))
 
 
